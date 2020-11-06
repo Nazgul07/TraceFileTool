@@ -17,12 +17,14 @@ namespace TraceFileTool
     {
         private TreeNode<Message> _root = new TreeNode<Message>(new Message());
         private TreeNode<Message> _current = null;
+        private bool RequestServerRequestsPresent = false;
         public Main()
         {
             InitializeComponent();
         }
         private void btMine_Click(object sender, EventArgs e)
         {
+            RequestServerRequestsPresent = false;
             _root = new TreeNode<Message>(new Message()); 
             _current = null;
             Task.Factory.StartNew(() =>
@@ -82,19 +84,34 @@ namespace TraceFileTool
                         }
                         progress.Invoke(new Action(() => { progress.Visible = false; }));
                         writer.WriteLine("Name, Times Called, Average Milliseconds (with children), Average Milliseconds (without children), Total Milliseconds (with children), Total Milliseconds (without children)");
-                        var fieldGroups = _root.FlattenChildren().Where(x => x.Value.End > DateTime.MinValue).GroupBy(x => x.Value.DisplayName);
+                        var fieldGroups = _root.FlattenChildren().Where(x =>
+                        {
+                            if(RequestServerRequestsPresent && x.Value.IsRequest && x.Value.RequestFromManuScript)
+                            {
+                                return false;
+                            }
+                            if (cbExcludeInternals.Checked && !x.Value.DisplayName.Contains('.'))
+                            {
+                                return false;
+                            }
+                            return x.Value.End > DateTime.MinValue;
+                        }).GroupBy(x => x.Value.DisplayName);
+                        
                         foreach (IGrouping<string, TreeNode<Message>> group in fieldGroups)
                         {
                             var total = group.Sum(x => x.Value.Total.TotalMilliseconds);
                             double exclusive = 0;
                             foreach (var item in group)
                             {
-                                exclusive += item.Children.Where(x => x.Value.End > DateTime.MinValue).Sum(x => x.Value.Total.TotalMilliseconds);
+                                exclusive += item.Children.Where(x =>
+                                {
+                                    return x.Value.End > DateTime.MinValue;
+                                }).Sum(x => x.Value.Total.TotalMilliseconds);
                             }
                             exclusive = total - exclusive;
-                            var avg = group.Average(x => x.Value.Total.TotalMilliseconds);
+                            var avg = Math.Round(group.Average(x => x.Value.Total.TotalMilliseconds));
                             var totalCalls = group.Count();
-                            var avgWithoutChildren = exclusive / totalCalls;
+                            var avgWithoutChildren = Math.Round(exclusive / totalCalls);
                             string name = group.Key;
                             writer.WriteLine($"{name},{totalCalls},{avg},{avgWithoutChildren},{total},{exclusive}");
                         }
@@ -110,19 +127,51 @@ namespace TraceFileTool
 
         private void ProcessMessage(string message)
         {
-            if (message.StartsWith("<mdebug"))
+            if (message.StartsWith("<mdebug") || message.StartsWith("<request") || message.StartsWith("<response"))
             {
                 var xml = XElement.Parse(message);
                 DateTime dateTime = DateTime.ParseExact(xml.Attribute("time").Value, "yyyy-MM-ddTHH:mm:ss:fff", CultureInfo.InvariantCulture);
-
-                if (xml.Name == "mdebug" && xml.XPathSelectElement("requestMade") != null)
+                if (xml.Name == "request")
+                {
+                    RequestServerRequestsPresent = true;
+                    XElement field = xml.XPathSelectElement("requestMade");
+                    long debugId = long.Parse(xml.Value);
+                    string name = xml.Attribute("messageText").Value;
+                    if (!name.EndsWith("Rq")) return;
+                    var parent = _current ?? _root;
+                    _current = new TreeNode<Message>(new Message() { DebugId = debugId, DisplayName = name, Start = dateTime, IsRequest = true });
+                    parent.AddChild(_current);
+                }
+                else if (xml.Name == "response")
+                {
+                    long debugId = long.Parse(xml.Value);
+                    string name = xml.Attribute("messageText").Value;
+                    if (!name.EndsWith("Rs")) return;
+                    if (_current?.Value.DebugId == debugId)
+                    {
+                        Message item = _current.Value;
+                        item.End = dateTime;
+                        _current = _current.Parent;
+                    }
+                    else
+                    {
+                        if (_current != null && _current.Parents.Any(x => x.Value.DebugId == debugId))
+                        {
+                            _current = _current.Parents.First(x => x.Value.DebugId == debugId);
+                            Message item = _current.Value;
+                            item.End = dateTime;
+                            _current = _current?.Parent;
+                        }
+                    }
+                }
+                else if (xml.Name == "mdebug" && xml.XPathSelectElement("requestMade") != null)
                 {
                     long level = long.Parse((xml.FirstNode as XElement).Attribute("level").Value);
                     XElement field = xml.XPathSelectElement("requestMade");
                     long debugId = long.Parse(field.Attribute("debugId").Value);
                     string name = XElement.Parse(field.Attribute("xml").Value).Name.LocalName;
                     var parent = _current ?? _root;
-                    _current = new TreeNode<Message>(new Message() { DebugId = debugId, DisplayName = name, Start = dateTime, Level = level });
+                    _current = new TreeNode<Message>(new Message() { DebugId = debugId, DisplayName = name, Start = dateTime, Level = level, IsRequest = true, RequestFromManuScript = true});
                     parent.AddChild(_current);
                 }
                 else if (xml.Name == "mdebug")
