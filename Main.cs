@@ -83,7 +83,7 @@ namespace TraceFileTool
                             }
                         }
                         progress.Invoke(new Action(() => { progress.Visible = false; }));
-                        writer.WriteLine("Name, Times Called, Average Milliseconds (with children), Average Milliseconds (without children), Total Milliseconds (with children), Total Milliseconds (without children), Max Single Milliseconds");
+                        writer.WriteLine("Name, Times Called, Average Milliseconds (with children), Average Milliseconds (without children), Total Milliseconds (with children), Total Milliseconds (without children), Max Single Milliseconds (with children), Max Single Milliseconds (without children)");
                         var fieldGroups = _root.FlattenChildren().Where(x =>
                         {
                             if(RequestServerRequestsPresent && x.Value.IsRequest && x.Value.RequestFromManuScript)
@@ -114,7 +114,12 @@ namespace TraceFileTool
                             var avgWithoutChildren = Math.Round(exclusive / totalCalls);
                             string name = group.Key;
                             var max = group.Max(x => x.Value.Total.TotalMilliseconds);
-                            writer.WriteLine($"{name},{totalCalls},{avg},{avgWithoutChildren},{total},{exclusive},{max}");
+                            var maxItem = group.First(x => x.Value.Total.TotalMilliseconds == max);
+                            var maxWithoutChildren = max - maxItem.Children.Where(x =>
+                            {
+                                return x.Value.End > DateTime.MinValue;
+                            }).Sum(x => x.Value.Total.TotalMilliseconds);
+                            writer.WriteLine($"{name},{totalCalls},{avg},{avgWithoutChildren},{total},{exclusive},{max},{maxWithoutChildren}");
                         }
                     }
                     Process.Start(file + ".csv");
