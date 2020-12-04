@@ -35,11 +35,12 @@
 			this.progress = new System.Windows.Forms.ProgressBar();
 			this.btMine = new System.Windows.Forms.Button();
 			this.cbExcludeInternals = new System.Windows.Forms.CheckBox();
+			this.btnSessions = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// btGo
 			// 
-			this.btGo.Location = new System.Drawing.Point(249, 54);
+			this.btGo.Location = new System.Drawing.Point(248, 54);
 			this.btGo.Name = "btGo";
 			this.btGo.Size = new System.Drawing.Size(94, 23);
 			this.btGo.TabIndex = 0;
@@ -75,7 +76,7 @@
 			// 
 			// progress
 			// 
-			this.progress.Location = new System.Drawing.Point(6, 84);
+			this.progress.Location = new System.Drawing.Point(5, 113);
 			this.progress.Maximum = 1000;
 			this.progress.Name = "progress";
 			this.progress.Size = new System.Drawing.Size(337, 23);
@@ -84,7 +85,7 @@
 			// 
 			// btMine
 			// 
-			this.btMine.Location = new System.Drawing.Point(149, 54);
+			this.btMine.Location = new System.Drawing.Point(248, 83);
 			this.btMine.Name = "btMine";
 			this.btMine.Size = new System.Drawing.Size(94, 23);
 			this.btMine.TabIndex = 5;
@@ -97,18 +98,29 @@
 			this.cbExcludeInternals.AutoSize = true;
 			this.cbExcludeInternals.Checked = true;
 			this.cbExcludeInternals.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.cbExcludeInternals.Location = new System.Drawing.Point(17, 58);
+			this.cbExcludeInternals.Location = new System.Drawing.Point(116, 87);
 			this.cbExcludeInternals.Name = "cbExcludeInternals";
 			this.cbExcludeInternals.Size = new System.Drawing.Size(126, 17);
 			this.cbExcludeInternals.TabIndex = 6;
 			this.cbExcludeInternals.Text = "Exclude DCT Interals";
 			this.cbExcludeInternals.UseVisualStyleBackColor = true;
 			// 
+			// btnSessions
+			// 
+			this.btnSessions.Location = new System.Drawing.Point(148, 54);
+			this.btnSessions.Name = "btnSessions";
+			this.btnSessions.Size = new System.Drawing.Size(94, 23);
+			this.btnSessions.TabIndex = 7;
+			this.btnSessions.Text = "Split by Sessions";
+			this.btnSessions.UseVisualStyleBackColor = true;
+			this.btnSessions.Click += new System.EventHandler(this.btnSessions_Click);
+			// 
 			// Main
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(351, 116);
+			this.ClientSize = new System.Drawing.Size(346, 148);
+			this.Controls.Add(this.btnSessions);
 			this.Controls.Add(this.cbExcludeInternals);
 			this.Controls.Add(this.btMine);
 			this.Controls.Add(this.progress);
@@ -132,6 +144,7 @@
         private System.Windows.Forms.ProgressBar progress;
         private System.Windows.Forms.Button btMine;
         private System.Windows.Forms.CheckBox cbExcludeInternals;
-    }
+		private System.Windows.Forms.Button btnSessions;
+	}
 }
 

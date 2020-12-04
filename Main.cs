@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using System.Globalization;
 using System.Diagnostics;
 using System.Text;
+using System.Xml;
+using System.Collections.Generic;
 
 namespace TraceFileTool
 {
@@ -274,6 +276,65 @@ namespace TraceFileTool
                 diag.ShowDialog();
                 tbFile.Text = diag.FileName;
             }
+        }
+
+        private void btnSessions_Click(object sender, EventArgs e)
+        {
+            Dictionary<string, StreamWriter> writers = new Dictionary<string, StreamWriter>();
+            string file = tbFile.Text;
+            string fileOut = Path.Combine(Path.GetDirectoryName(file), "Fixed-" + Path.GetFileName(file));
+
+            using (MultiStream reader = new MultiStream(new[] { GenerateStreamFromString("<root>"), File.OpenRead(file), GenerateStreamFromString("</root>") }))
+            using (XmlReader xmlReader = XmlReader.Create(reader))
+            {
+                long length = 0L;
+                progress.Visible = true;
+                while (xmlReader.Read())
+                {
+                    length += 1;
+                    if (length % 100L == 0L)
+                    {
+                        double percent = (double)reader.Position / (double)reader.Length * 100.0;
+                        progress.Value = (int)(percent * 10.0);
+                    }
+                    if (xmlReader.Name != "root" && xmlReader.NodeType == XmlNodeType.Element)
+                    {
+                        var sessionid = xmlReader.GetAttribute("sessionId");
+                        var xml = xmlReader.ReadOuterXml();
+                        if (!string.IsNullOrEmpty(sessionid))
+                        {
+                            var fileName = Path.Combine(Path.GetDirectoryName(file), $"{sessionid.Replace(":", "-")}-{Path.GetFileName(file)}");
+                            StreamWriter writer;
+                            if (writers.ContainsKey(fileName))
+                            {
+                                writer = writers[fileName];
+                            }
+                            else
+                            {
+                                writer = new StreamWriter(File.OpenWrite(fileName));
+                                writers.Add(fileName, writer);
+                            }
+                            writer.WriteLine(xml);
+                        }
+                    }
+                }
+                foreach (var writer in writers.Values)
+                {
+                    writer.Close();
+                    writer.Dispose();
+                }
+
+                progress.Visible = false;
+            }
+        }
+        public static Stream GenerateStreamFromString(string s)
+        {
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream);
+            writer.Write(s);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
         }
     }
 }
