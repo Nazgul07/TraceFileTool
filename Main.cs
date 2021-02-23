@@ -75,7 +75,8 @@ namespace TraceFileTool
                             catch
                             {
                                 line = line.Replace("<?xml version=\"1.0\" encoding=\"utf-16\"?>", "");
-                                var match = Regex.Match(line, "(?<=value=\").*(?=\"/>)");
+								line = Regex.Replace(line, "<Session.loginRq.*?/>", "<Session.loginRq/>");
+								var match = Regex.Match(line, "(?<=value=\").*(?=\"/>)");
                                 if (match.Value.Length == 0)
                                 {
                                     continue;

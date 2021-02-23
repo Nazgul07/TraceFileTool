@@ -100,9 +100,9 @@
 			this.cbExcludeInternals.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.cbExcludeInternals.Location = new System.Drawing.Point(116, 87);
 			this.cbExcludeInternals.Name = "cbExcludeInternals";
-			this.cbExcludeInternals.Size = new System.Drawing.Size(126, 17);
+			this.cbExcludeInternals.Size = new System.Drawing.Size(132, 17);
 			this.cbExcludeInternals.TabIndex = 6;
-			this.cbExcludeInternals.Text = "Exclude DCT Interals";
+			this.cbExcludeInternals.Text = "Exclude DCT Internals";
 			this.cbExcludeInternals.UseVisualStyleBackColor = true;
 			// 
 			// btnSessions
