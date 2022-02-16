@@ -62,7 +62,14 @@ namespace TraceFileTool
 
         public IEnumerable<TreeNode<T>> FlattenChildren()
         {
-            return _children.Concat(_children.SelectMany(x => x.FlattenChildren()));
+            List<TreeNode<T>> result = new List<TreeNode<T>>();
+            foreach (var childNode in _children)
+            {
+                result.Add(childNode);
+                foreach (var child in childNode.FlattenChildren())
+                    result.Add(child);
+            }
+            return result;
         }
     }
 }
